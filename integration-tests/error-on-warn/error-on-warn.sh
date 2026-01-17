@@ -1,9 +1,9 @@
 # make sure errors stop the script
 set -e
 
-echo "add patch-package"
+echo "add yarn-berry-patch-package"
 yarn add $1
-alias patch-package=./node_modules/.bin/patch-package
+alias patch-package=./node_modules/.bin/yarn-berry-patch-package
 
 export NODE_ENV="development"
 export CI=""

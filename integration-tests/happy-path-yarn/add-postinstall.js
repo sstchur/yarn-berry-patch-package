@@ -3,7 +3,7 @@ require("fs").writeFileSync(
   JSON.stringify({
     ...require("./package.json"),
     scripts: {
-      postinstall: "patch-package",
+      postinstall: "yarn-berry-patch-package",
     },
   }),
 )

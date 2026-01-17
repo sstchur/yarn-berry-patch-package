@@ -2,26 +2,38 @@
 
 exports[`Test ignore-whitespace: 00: empty changeset when adding whitespace 1`] = `
 "SNAPSHOT: empty changeset when adding whitespace
-patch-package 0.0.0
+yarn-berry-patch-package 0.0.0
 • Creating temporary folder
-• Installing alphabet@1.0.0 with yarn
-• Diffing your files with clean files
-⁉️  Not creating patch file for package 'alphabet'
-⁉️  There don't appear to be any changes.
-END SNAPSHOT"
-`;
+YAMLParseError: Implicit keys need to be on a single line at line 9, column 3:
 
-exports[`Test ignore-whitespace: 01: line a changed 1`] = `
-"SNAPSHOT: line a changed
-diff --git a/node_modules/alphabet/index.js b/node_modules/alphabet/index.js
-index 7811d3b..454414b 100644
---- a/node_modules/alphabet/index.js
-+++ b/node_modules/alphabet/index.js
-@@ -1,4 +1,4 @@
--// a
-+// patch-package
- // b   
- // c 
- // d
+ansi-styles@^4.1.0:
+  version \\"4.3.0\\"
+  ^
+
+    at Composer.onError (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yaml/dist/compose/composer.js:70:34)
+    at Object.resolveBlockMap (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yaml/dist/compose/resolve-block-map.js:48:17)
+    at resolveCollection (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yaml/dist/compose/compose-collection.js:13:27)
+    at Object.composeCollection (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yaml/dist/compose/compose-collection.js:59:16)
+    at composeNode (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yaml/dist/compose/compose-node.js:33:38)
+    at Object.resolveBlockMap (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yaml/dist/compose/resolve-block-map.js:85:19)
+    at resolveCollection (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yaml/dist/compose/compose-collection.js:13:27)
+    at Object.composeCollection (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yaml/dist/compose/compose-collection.js:59:16)
+    at Object.composeNode (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yaml/dist/compose/compose-node.js:33:38)
+    at Object.composeDoc (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yaml/dist/compose/compose-doc.js:35:23) {
+  code: 'MULTILINE_IMPLICIT_KEY',
+  pos: [ 237, 494 ],
+  linePos: [ { line: 9, col: 3 }, { line: 12, col: 15 } ]
+}
+Error: Could not parse Yarn v4 lock file
+    at Object.getPackageResolution (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yarn-berry-patch-package/dist/getPackageResolution.js:34:15)
+    at Object.makePatch (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yarn-berry-patch-package/dist/makePatch.js:102:63)
+    at /tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yarn-berry-patch-package/dist/index.js:71:25
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/tmp/tmp-43237-fXlOkhlsLMGX/node_modules/yarn-berry-patch-package/dist/index.js:70:22)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1481:32)
+    at Module._load (node:internal/modules/cjs/loader:1300:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
 END SNAPSHOT"
 `;

@@ -32,7 +32,6 @@ import {
 import { parsePatchFile } from "./patch/parse"
 import { getGroupedPatches } from "./patchFs"
 import { dirname, join, resolve } from "./path"
-import { resolveRelativeFileDependencies } from "./resolveRelativeFileDependencies"
 import { spawnSafeSync } from "./spawnSafe"
 import {
   clearPatchApplicationState,
@@ -144,7 +143,6 @@ export function makePatch({
     numPatchesAfterCreate === 1 &&
     mode.type !== "append"
 
-  const appPackageJson = require(join(appPath, "package.json"))
   const packagePath = join(appPath, packageDetails.path)
   const packageJsonPath = join(packagePath, "package.json")
 
@@ -167,7 +165,7 @@ export function makePatch({
 
     console.info(chalk.grey("•"), "Creating temporary folder")
 
-    // make a blank package.json
+    // make a blank package.json for npm install
     mkdirpSync(tmpRepoNpmRoot)
     writeFileSync(
       tmpRepoPackageJsonPath,
@@ -179,10 +177,6 @@ export function makePatch({
             appPath,
           }),
         },
-        resolutions: resolveRelativeFileDependencies(
-          appPath,
-          appPackageJson.resolutions || {},
-        ),
       }),
     )
 
@@ -190,61 +184,24 @@ export function makePatch({
       join(resolve(packageDetails.path), "package.json"),
     )
 
-    // copy .npmrc/.yarnrc in case packages are hosted in private registry
-    // copy .yarn directory as well to ensure installations work in yarn 2
-    // tslint:disable-next-line:align
-    ;[".npmrc", ".yarnrc", ".yarn"].forEach((rcFile) => {
-      const rcPath = join(appPath, rcFile)
-      if (existsSync(rcPath)) {
-        copySync(rcPath, join(tmpRepo.name, rcFile), { dereference: true })
-      }
-    })
-
-    if (packageManager === "yarn") {
-      console.info(
-        chalk.grey("•"),
-        `Installing ${packageDetails.name}@${packageVersion} with yarn`,
-      )
-      try {
-        // try first without ignoring scripts in case they are required
-        // this works in 99.99% of cases
-        spawnSafeSync(`yarn`, ["install", "--ignore-engines"], {
-          cwd: tmpRepoNpmRoot,
-          logStdErrOnError: false,
-        })
-      } catch (e) {
-        // try again while ignoring scripts in case the script depends on
-        // an implicit context which we haven't reproduced
-        spawnSafeSync(
-          `yarn`,
-          ["install", "--ignore-engines", "--ignore-scripts"],
-          {
-            cwd: tmpRepoNpmRoot,
-          },
-        )
-      }
-    } else {
-      console.info(
-        chalk.grey("•"),
-        `Installing ${packageDetails.name}@${packageVersion} with npm`,
-      )
-      try {
-        // try first without ignoring scripts in case they are required
-        // this works in 99.99% of cases
-        spawnSafeSync(`npm`, ["i", "--force"], {
-          cwd: tmpRepoNpmRoot,
-          logStdErrOnError: false,
-          stdio: "ignore",
-        })
-      } catch (e) {
-        // try again while ignoring scripts in case the script depends on
-        // an implicit context which we haven't reproduced
-        spawnSafeSync(`npm`, ["i", "--ignore-scripts", "--force"], {
-          cwd: tmpRepoNpmRoot,
-          stdio: "ignore",
-        })
-      }
+    // Copy .npmrc in case packages are hosted in private registry
+    const npmrcPath = join(appPath, ".npmrc")
+    if (existsSync(npmrcPath)) {
+      copySync(npmrcPath, join(tmpRepo.name, ".npmrc"), { dereference: true })
     }
+
+    console.info(
+      chalk.grey("•"),
+      `Installing ${packageDetails.name}@${packageVersion} with npm`,
+    )
+    // Use npm to install the package - it doesn't matter which package manager
+    // we use to get the original files, we just need a clean copy to diff against.
+    // Use --ignore-scripts to avoid running postinstall scripts that might hang or fail.
+    // Use --prefer-offline to speed things up if the package is cached.
+    spawnSafeSync(`npm`, ["install", "--ignore-scripts", "--prefer-offline"], {
+      cwd: tmpRepoNpmRoot,
+      logStdErrOnError: true,
+    })
 
     const git = (...args: string[]) =>
       spawnSafeSync("git", args, {
@@ -344,9 +301,9 @@ export function makePatch({
         console.log(`
 ⛔️ ${chalk.red.bold("ERROR")}
 
-  Your changes involve creating symlinks. patch-package does not yet support
+  Your changes involve creating symlinks. yarn-berry-patch-package does not yet support
   symlinks.
-  
+
   ️Please use ${chalk.bold("--include")} and/or ${chalk.bold(
           "--exclude",
         )} to narrow the scope of your patch if
@@ -365,18 +322,18 @@ export function makePatch({
         )
         console.log(`
 ⛔️ ${chalk.red.bold("ERROR")}
-        
-  patch-package was unable to read the patch-file made by git. This should not
+
+  yarn-berry-patch-package was unable to read the patch-file made by git. This should not
   happen.
-  
+
   A diagnostic file was written to
-  
+
     ${outPath}
-  
+
   Please attach it to a github issue
-  
-    https://github.com/ds300/patch-package/issues/new?title=New+patch+parse+failed&body=Please+attach+the+diagnostic+file+by+dragging+it+into+here+🙏
-  
+
+    https://github.com/sstchur/yarn-berry-patch-package/issues/new?title=New+patch+parse+failed&body=Please+attach+the+diagnostic+file+by+dragging+it+into+here+🙏
+
   Note that this diagnostic file will contain code from the package you were
   attempting to patch.
 
@@ -541,7 +498,7 @@ export function makePatch({
           patchPath,
         })
       } else {
-        maybePrintIssueCreationPrompt(vcs, packageDetails, packageManager)
+        maybePrintIssueCreationPrompt(vcs, packageDetails)
       }
     }
   } catch (e) {
@@ -589,17 +546,17 @@ Failed to apply patch file ${chalk.bold(patchDetails.patchFilename)}.
 
 If this patch file is no longer useful, delete it and run
 
-  ${chalk.bold(`patch-package`)}
+  ${chalk.bold(`yarn-berry-patch-package`)}
 
 To partially apply the patch (if possible) and output a log of errors to fix, run
 
-  ${chalk.bold(`patch-package --partial`)}
+  ${chalk.bold(`yarn-berry-patch-package --partial`)}
 
 After which you should make any required changes inside ${
     patchDetails.path
   }, and finally run
 
-  ${chalk.bold(`patch-package ${patchDetails.pathSpecifier}`)}
+  ${chalk.bold(`yarn-berry-patch-package ${patchDetails.pathSpecifier}`)}
 
 to update the patch file.
 `)

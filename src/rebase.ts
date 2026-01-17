@@ -45,7 +45,7 @@ export function rebase({
     console.log(
       chalk.blueBright("No patch state found"),
       "Did you forget to run",
-      chalk.bold("patch-package"),
+      chalk.bold("yarn-berry-patch-package"),
       "(without arguments) first?",
     )
     process.exit(1)
@@ -55,7 +55,7 @@ export function rebase({
       chalk.blueBright("Already rebasing"),
       "Make changes to the files in",
       chalk.bold(packagePatches[0].path),
-      "and then run `patch-package",
+      "and then run `yarn-berry-patch-package",
       packagePathSpecifier,
       "--continue` to",
       packagePatches.length === state.patches.length
@@ -96,7 +96,7 @@ Make any changes you need inside ${chalk.bold(packagePatches[0].path)}
 When you are done, run
 
   ${chalk.bold(
-    `patch-package ${packagePathSpecifier} --append 'MyChangeDescription'`,
+    `yarn-berry-patch-package ${packagePathSpecifier} --append 'MyChangeDescription'`,
   )}
   
 to insert a new patch file.
@@ -179,14 +179,14 @@ When you are done, do one of the following:
 
   To update ${chalk.bold(packagePatches[targetIdx].patchFilename)} run
 
-    ${chalk.bold(`patch-package ${packagePathSpecifier}`)}
+    ${chalk.bold(`yarn-berry-patch-package ${packagePathSpecifier}`)}
     
   To create a new patch file after ${chalk.bold(
     packagePatches[targetIdx].patchFilename,
   )} run
   
     ${chalk.bold(
-      `patch-package ${packagePathSpecifier} --append 'MyChangeDescription'`,
+      `yarn-berry-patch-package ${packagePathSpecifier} --append 'MyChangeDescription'`,
     )}
 
   `)

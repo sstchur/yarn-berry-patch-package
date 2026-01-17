@@ -1,9 +1,9 @@
 # make sure errors stop the script
 set -e
 
-echo "add patch-package"
+echo "add yarn-berry-patch-package"
 yarn add $1
-alias patch-package=./node_modules/.bin/patch-package
+alias patch-package=./node_modules/.bin/yarn-berry-patch-package
 
 echo "@microsoft/mezzurite-core => @types/angular should not contain patch-package"
 if grep patch-package ./node_modules/@microsoft/mezzurite-core/node_modules/@types/angular/index.d.ts ; then

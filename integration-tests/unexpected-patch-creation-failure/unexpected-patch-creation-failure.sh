@@ -1,15 +1,15 @@
 # make sure errors stop the script
 set -e
 
-echo "add patch-package"
+echo "add yarn-berry-patch-package"
 yarn add $1
-alias patch-package=./node_modules/.bin/patch-package
+alias patch-package=./node_modules/.bin/yarn-berry-patch-package
 
 echo "modify left-pad"
 npx replace leftPad patchPackage node_modules/left-pad/index.js
 
 echo "force patch-package to fail"
-npx replace 'parsePatchFile\(' 'blarseBlatchBlile(' node_modules/patch-package/dist/makePatch.js
+npx replace 'parsePatchFile\(' 'blarseBlatchBlile(' node_modules/yarn-berry-patch-package/dist/makePatch.js
 
 echo "there is no error log file"
 if ls ./patch-package-error.json.gz
@@ -17,7 +17,7 @@ then
   exit 1
 fi
 
-echo "SNAPSHOT: patch-package fails to parse a patch it created"
+echo "SNAPSHOT: yarn-berry-patch-package fails to parse a patch it created"
 if patch-package left-pad
 then
   exit 1

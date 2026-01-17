@@ -2,7 +2,7 @@
 
 exports[`Test dev-only-patches: 00: patch-package happily ignores slash on CI because it's a dev dep 1`] = `
 "SNAPSHOT: patch-package happily ignores slash on CI because it's a dev dep
-patch-package 0.0.0
+yarn-berry-patch-package 0.0.0
 Applying patches...
 left-pad@1.3.0 ✔
 Skipping dev-only slash@3.0.0 ✔
@@ -11,7 +11,7 @@ END SNAPSHOT"
 
 exports[`Test dev-only-patches: 01: patch-package fails to find fake-package 1`] = `
 "SNAPSHOT: patch-package fails to find fake-package
-patch-package 0.0.0
+yarn-berry-patch-package 0.0.0
 Applying patches...
 left-pad@1.3.0 ✔
 Skipping dev-only slash@3.0.0 ✔
@@ -22,13 +22,13 @@ Error: Patch file found for package fake-package which is not present at node_mo
     fake-package+3.0.0.dev.patch
 
 ---
-patch-package finished with 1 error(s).
+yarn-berry-patch-package finished with 1 error(s).
 END SNAPSHOT"
 `;
 
 exports[`Test dev-only-patches: 02: fake-package should be skipped 1`] = `
 "SNAPSHOT: fake-package should be skipped
-patch-package 0.0.0
+yarn-berry-patch-package 0.0.0
 Applying patches...
 Skipping dev-only fake-package@3.0.0 ✔
 left-pad@1.3.0 ✔

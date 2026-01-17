@@ -1,9 +1,9 @@
 # make sure errors stop the script
 set -e
 
-echo "add patch-package"
+echo "add yarn-berry-patch-package"
 yarn add $1
-alias patch-package=./node_modules/.bin/patch-package
+alias patch-package=./node_modules/.bin/yarn-berry-patch-package
 
 # this test makes sure that we can patch packages with build metadata in their version strings e.g. 4.5.6+commitsha
 echo "Add @parcel/codeframe"
@@ -24,7 +24,7 @@ echo "reinstall node_modules"
 npx rimraf node_modules
 yarn
 
-echo "patch-package didn't run"
+echo "yarn-berry-patch-package didn't run"
 if grep yarn node_modules/@parcel/codeframe/src/codeframe.js ; then
   exit 1
 fi

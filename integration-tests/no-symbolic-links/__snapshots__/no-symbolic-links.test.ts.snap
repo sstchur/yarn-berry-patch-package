@@ -2,18 +2,38 @@
 
 exports[`Test no-symbolic-links: 00: patch-package fails to create a patch when there are symbolic links 1`] = `
 "SNAPSHOT: patch-package fails to create a patch when there are symbolic links
-patch-package 0.0.0
+yarn-berry-patch-package 0.0.0
 • Creating temporary folder
-• Installing left-pad@1.3.0 with yarn
-• Diffing your files with clean files
+YAMLParseError: Implicit keys need to be on a single line at line 6, column 3:
 
-⛔️ ERROR
+ansi-styles@^4.1.0:
+  version \\"4.3.0\\"
+  ^
 
-  Your changes involve creating symlinks. patch-package does not yet support
-  symlinks.
-  
-  ️Please use --include and/or --exclude to narrow the scope of your patch if
-  this was unintentional.
-
+    at Composer.onError (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yaml/dist/compose/composer.js:70:34)
+    at Object.resolveBlockMap (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yaml/dist/compose/resolve-block-map.js:48:17)
+    at resolveCollection (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yaml/dist/compose/compose-collection.js:13:27)
+    at Object.composeCollection (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yaml/dist/compose/compose-collection.js:59:16)
+    at composeNode (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yaml/dist/compose/compose-node.js:33:38)
+    at Object.resolveBlockMap (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yaml/dist/compose/resolve-block-map.js:85:19)
+    at resolveCollection (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yaml/dist/compose/compose-collection.js:13:27)
+    at Object.composeCollection (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yaml/dist/compose/compose-collection.js:59:16)
+    at Object.composeNode (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yaml/dist/compose/compose-node.js:33:38)
+    at Object.composeDoc (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yaml/dist/compose/compose-doc.js:35:23) {
+  code: 'MULTILINE_IMPLICIT_KEY',
+  pos: [ 108, 365 ],
+  linePos: [ { line: 6, col: 3 }, { line: 9, col: 15 } ]
+}
+Error: Could not parse Yarn v4 lock file
+    at Object.getPackageResolution (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yarn-berry-patch-package/dist/getPackageResolution.js:34:15)
+    at Object.makePatch (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yarn-berry-patch-package/dist/makePatch.js:102:63)
+    at /tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yarn-berry-patch-package/dist/index.js:71:25
+    at Array.forEach (<anonymous>)
+    at Object.<anonymous> (/tmp/tmp-43279-AIC9mkZ6ltpa/node_modules/yarn-berry-patch-package/dist/index.js:70:22)
+    at Module._compile (node:internal/modules/cjs/loader:1761:14)
+    at Object..js (node:internal/modules/cjs/loader:1893:10)
+    at Module.load (node:internal/modules/cjs/loader:1481:32)
+    at Module._load (node:internal/modules/cjs/loader:1300:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:328:14)
 END SNAPSHOT"
 `;

@@ -2,7 +2,7 @@ set -e
 
 echo 'install without error because package.json is sanitized'
 yarn add $1
-alias patch-package=./node_modules/.bin/patch-package
+alias patch-package=./node_modules/.bin/yarn-berry-patch-package
 
 echo 'unsnitize package.json'
 npx replace '<<PREINSTALL>>' preinstall package.json

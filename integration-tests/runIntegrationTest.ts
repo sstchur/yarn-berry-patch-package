@@ -8,7 +8,7 @@ import rimraf from "rimraf"
 export const patchPackageTarballPath = resolve(
   fs
     .readdirSync(".")
-    .filter((nm) => nm.match(/^patch-package\.test\.\d+\.tgz$/))[0],
+    .filter((nm) => nm.match(/^yarn-berry-patch-package\.test\.\d+\.tgz$/))[0],
 )
 
 export function runIntegrationTest({

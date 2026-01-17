@@ -1,9 +1,9 @@
 # make sure errors stop the script
 set -e
 
-echo "add patch-package"
+echo "add yarn-berry-patch-package"
 yarn add $1
-alias patch-package=./node_modules/.bin/patch-package
+alias patch-package=./node_modules/.bin/yarn-berry-patch-package
 
 echo "Add left-pad"
 yarn add left-pad@1.1.3
@@ -23,17 +23,17 @@ echo "reinstall node_modules"
 npx rimraf node_modules
 yarn
 
-echo "patch-package didn't run"
+echo "yarn-berry-patch-package didn't run"
 if grep yarn node_modules/left-pad/index.js ; then
   exit 1
 fi
 
-echo "add patch-package to postinstall hook"
+echo "add yarn-berry-patch-package to postinstall hook"
 node ./add-postinstall.js
 
 echo "reinstall node_modules"
 npx rimraf node_modules
 yarn
 
-echo "patch-package did run"
+echo "yarn-berry-patch-package did run"
 grep yarn node_modules/left-pad/index.js

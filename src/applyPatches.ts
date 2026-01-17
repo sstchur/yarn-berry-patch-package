@@ -148,7 +148,10 @@ export function applyPatchesForApp({
 
   if (problemsSummary.length) {
     console.log("---")
-    console.log("patch-package finished with", problemsSummary.join(", ") + ".")
+    console.log(
+      "yarn-berry-patch-package finished with",
+      problemsSummary.join(", ") + ".",
+    )
   }
 
   if (errors.length && shouldExitWithError) {
@@ -464,7 +467,9 @@ function createVersionMismatchWarning({
   path: string
 }) {
   return `
-${chalk.yellow("Warning:")} patch-package detected a patch file version mismatch
+${chalk.yellow(
+  "Warning:",
+)} yarn-berry-patch-package detected a patch file version mismatch
 
   Don't worry! This is probably fine. The patch was still applied
   successfully. Here's the deets:
@@ -485,7 +490,7 @@ ${chalk.yellow("Warning:")} patch-package detected a patch file version mismatch
   breakage even though the patch was applied successfully. Make sure the package
   still behaves like you expect (you wrote tests, right?) and then run
 
-    ${chalk.bold(`patch-package ${pathSpecifier}`)}
+    ${chalk.bold(`yarn-berry-patch-package ${pathSpecifier}`)}
 
   to update the version in the patch file name and make this warning go away.
 `
@@ -509,7 +514,7 @@ ${chalk.red.bold("**ERROR**")} ${chalk.red(
   
     ${path}
 
-  This error was caused because patch-package cannot apply the following patch file:
+  This error was caused because yarn-berry-patch-package cannot apply the following patch file:
 
     patches/${patchFilename}
 
@@ -517,12 +522,12 @@ ${chalk.red.bold("**ERROR**")} ${chalk.red(
   an accidental change made to the patch file? Try recreating it by manually
   editing the appropriate files and running:
   
-    patch-package ${pathSpecifier}
+    yarn-berry-patch-package ${pathSpecifier}
   
-  If that doesn't work, then it's a bug in patch-package, so please submit a bug
+  If that doesn't work, then it's a bug in yarn-berry-patch-package, so please submit a bug
   report. Thanks!
 
-    https://github.com/ds300/patch-package/issues
+    https://github.com/sstchur/yarn-berry-patch-package/issues
     
 `
 }
@@ -564,7 +569,7 @@ ${chalk.red.bold("**ERROR**")} ${chalk.red(
 
   i.e. manually make the appropriate file changes, then run 
 
-    patch-package ${pathSpecifier}
+    yarn-berry-patch-package ${pathSpecifier}
 
   Info:
     Patch file: patches/${patchFilename}

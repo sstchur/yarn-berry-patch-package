@@ -2,14 +2,14 @@
 
 exports[`Test broken-patch-file: 00: patch-package fails when patch file is invalid 1`] = `
 "SNAPSHOT: patch-package fails when patch file is invalid
-patch-package 0.0.0
+yarn-berry-patch-package 0.0.0
 Applying patches...
 
 **ERROR** Failed to apply patch for package left-pad at path
   
     node_modules/left-pad
 
-  This error was caused because patch-package cannot apply the following patch file:
+  This error was caused because yarn-berry-patch-package cannot apply the following patch file:
 
     patches/left-pad+1.1.3.patch
 
@@ -19,13 +19,13 @@ Applying patches...
   
     patch-package left-pad
   
-  If that doesn't work, then it's a bug in patch-package, so please submit a bug
+  If that doesn't work, then it's a bug in yarn-berry-patch-package, so please submit a bug
   report. Thanks!
 
-    https://github.com/ds300/patch-package/issues
+    https://github.com/sstchur/yarn-berry-patch-package/issues
     
 
 ---
-patch-package finished with 1 error(s).
+yarn-berry-patch-package finished with 1 error(s).
 END SNAPSHOT"
 `;

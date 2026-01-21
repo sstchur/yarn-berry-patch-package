@@ -95,15 +95,15 @@ export function applyPatchesForApp({
   appPath,
   reverse,
   patchDir,
-  shouldExitWithError,
   shouldExitWithWarning,
+  shouldExitWithError,
   bestEffort,
 }: {
   appPath: string
   reverse: boolean
   patchDir: string
-  shouldExitWithError: boolean
   shouldExitWithWarning: boolean
+  shouldExitWithError: boolean
   bestEffort: boolean
 }): void {
   const patchesDirectory = join(appPath, patchDir)
@@ -135,7 +135,7 @@ export function applyPatchesForApp({
     console.log(warning)
   }
   for (const error of errors) {
-    console.log(error)
+    console.error(error)
   }
 
   const problemsSummary = []
@@ -271,7 +271,7 @@ export function applyPatchesForPackage({
       ) {
         appliedPatches.push(patchDetails)
         // yay patch was applied successfully
-        // print warning if version mismatch
+        // warn if version mismatch
         if (installedPackageVersion !== version) {
           warnings.push(
             createVersionMismatchWarning({
@@ -481,18 +481,15 @@ ${chalk.yellow(
   applied to
 
     ${packageName}@${chalk.bold(actualVersion)}
-  
+
   At path
-  
+
     ${path}
 
-  This warning is just to give you a heads-up. There is a small chance of
-  breakage even though the patch was applied successfully. Make sure the package
-  still behaves like you expect (you wrote tests, right?) and then run
+  If you have problems related to this package, this might be why. To
+  get rid of this warning, regenerate the patch file by running:
 
     ${chalk.bold(`yarn-berry-patch-package ${pathSpecifier}`)}
-
-  to update the version in the patch file name and make this warning go away.
 `
 }
 

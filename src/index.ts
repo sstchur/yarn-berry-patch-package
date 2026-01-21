@@ -1,6 +1,7 @@
 import chalk from "chalk"
 import process from "process"
 import minimist from "minimist"
+import { isCI } from "ci-info"
 
 import { applyPatchesForApp } from "./applyPatches"
 import { getAppRootPath } from "./getAppRootPath"
@@ -10,7 +11,6 @@ import { detectPackageManager } from "./detectPackageManager"
 import { join } from "./path"
 import { normalize, sep } from "path"
 import slash = require("slash")
-import { isCI } from "ci-info"
 import { rebase } from "./rebase"
 
 const appPath = getAppRootPath()
@@ -101,6 +101,7 @@ if (argv.version || argv.v) {
   } else {
     console.log("Applying patches...")
     const reverse = !!argv["reverse"]
+    const shouldExitWithWarning = !!argv["error-on-warn"]
     // don't want to exit(1) on postinstall locally.
     // see https://github.com/ds300/patch-package/issues/86
     const shouldExitWithError =
@@ -109,14 +110,12 @@ if (argv.version || argv.v) {
       (isCI && !process.env.PATCH_PACKAGE_INTEGRATION_TEST) ||
       process.env.NODE_ENV === "test"
 
-    const shouldExitWithWarning = !!argv["error-on-warn"]
-
     applyPatchesForApp({
       appPath,
       reverse,
       patchDir,
-      shouldExitWithError,
       shouldExitWithWarning,
+      shouldExitWithError,
       bestEffort: argv.partial,
     })
   }
@@ -150,18 +149,19 @@ Usage:
 
     ${chalk.bold("--error-on-fail")}
 
-      Forces yarn-berry-patch-package to exit with code 1 after failing.
+      Forces yarn-berry-patch-package to exit with code 1 when a patch fails to apply.
 
-      When running locally yarn-berry-patch-package always exits with 0 by default.
-      This happens even after failing to apply patches because otherwise
-      yarn.lock and package.json might get out of sync with node_modules,
-      which can be very confusing.
-
-      --error-on-fail is ${chalk.bold("switched on")} by default on CI.
+      By default, yarn-berry-patch-package only exits with code 1 in CI environments
+      (to avoid leaving yarn.lock and package.json out of sync with node_modules
+      during local development). Use this flag to force strict behavior locally.
 
     ${chalk.bold("--error-on-warn")}
 
-      Forces yarn-berry-patch-package to exit with code 1 after warning.
+      Promotes warnings to errors and exits with code 1 when warnings occur.
+
+      Use this flag if you want version mismatch warnings (where a patch
+      applies successfully but to a different version than it was created for)
+      to be treated as errors.
 
     ${chalk.bold("--reverse")}
 

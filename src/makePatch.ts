@@ -158,27 +158,13 @@ export function makePatch({
     -`/node_modules/${packageDetails.name}`.length,
   )
 
-  const tmpRepoPackageJsonPath = join(tmpRepoNpmRoot, "package.json")
-
   try {
     const patchesDir = resolve(join(appPath, patchDir))
 
     console.info(chalk.grey("•"), "Creating temporary folder")
 
-    // make a blank package.json for npm install
-    mkdirpSync(tmpRepoNpmRoot)
-    writeFileSync(
-      tmpRepoPackageJsonPath,
-      JSON.stringify({
-        dependencies: {
-          [packageDetails.name]: getPackageResolution({
-            packageDetails,
-            packageManager,
-            appPath,
-          }),
-        },
-      }),
-    )
+    // Create the directory where the package will be extracted
+    mkdirpSync(tmpRepoPackagePath)
 
     const packageVersion = getPackageVersion(
       join(resolve(packageDetails.path), "package.json"),
@@ -192,16 +178,53 @@ export function makePatch({
 
     console.info(
       chalk.grey("•"),
-      `Installing ${packageDetails.name}@${packageVersion} with npm`,
+      `Fetching ${packageDetails.name}@${packageVersion} with npm`,
     )
-    // Use npm to install the package - it doesn't matter which package manager
-    // we use to get the original files, we just need a clean copy to diff against.
-    // Use --ignore-scripts to avoid running postinstall scripts that might hang or fail.
-    // Use --prefer-offline to speed things up if the package is cached.
-    spawnSafeSync(`npm`, ["install", "--ignore-scripts", "--prefer-offline"], {
-      cwd: tmpRepoNpmRoot,
-      logStdErrOnError: true,
-    })
+    // Use npm pack to download ONLY the package tarball — no transitive deps.
+    const packageResolution =
+      getPackageResolution({
+        packageDetails,
+        packageManager,
+        appPath,
+      }) ?? packageVersion
+    const packSpec = packageResolution.startsWith("file:")
+      ? packageResolution.slice(5)
+      : `${packageDetails.name}@${packageResolution}`
+
+    const npmPackResult = spawnSafeSync(
+      `npm`,
+      ["pack", packSpec, "--pack-destination", tmpRepoNpmRoot],
+      {
+        cwd: tmpRepo.name,
+        logStdErrOnError: false,
+        throwOnError: false,
+      },
+    )
+
+    if (npmPackResult.status !== 0) {
+      console.error(`Failed to fetch ${packageDetails.name}@${packageVersion}`)
+      if (npmPackResult.stderr) {
+        console.error(npmPackResult.stderr.toString())
+      }
+      throw npmPackResult
+    }
+
+    // npm pack prints the tarball filename to stdout
+    const tarballFilename = npmPackResult.stdout.toString().trim()
+    const tarballPath = join(tmpRepoNpmRoot, tarballFilename)
+
+    // Extract the tarball. npm tarballs always have a top-level "package/"
+    // directory, so --strip-components=1 extracts contents directly.
+    spawnSafeSync(
+      `tar`,
+      ["xzf", tarballPath, "-C", tmpRepoPackagePath, "--strip-components=1"],
+      {
+        logStdErrOnError: true,
+      },
+    )
+
+    // Clean up the tarball
+    removeSync(tarballPath)
 
     const git = (...args: string[]) =>
       spawnSafeSync("git", args, {

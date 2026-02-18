@@ -6,6 +6,7 @@ import {
   existsSync,
   mkdirpSync,
   mkdirSync,
+  readFileSync,
   realpathSync,
   removeSync,
   writeFileSync,
@@ -62,6 +63,7 @@ export function makePatch({
   patchDir,
   createIssue,
   mode,
+  manualPatchOptions,
 }: {
   packagePathSpecifier: string
   appPath: string
@@ -71,79 +73,121 @@ export function makePatch({
   patchDir: string
   createIssue: boolean
   mode: { type: "overwrite_last" } | { type: "append"; name?: string }
+  manualPatchOptions?: { targetDir: string }
 }) {
-  const packageDetails = getPatchDetailsFromCliString(packagePathSpecifier)
+  const isManualPatch = !!manualPatchOptions
 
-  if (!packageDetails) {
-    console.log("No such package", packagePathSpecifier)
-    return
+  let packageDetails: PackageDetails
+  if (isManualPatch) {
+    const targetPkgJsonPath = join(
+      appPath,
+      manualPatchOptions!.targetDir,
+      "package.json",
+    )
+    if (!existsSync(targetPkgJsonPath)) {
+      console.log(`No package.json found at ${targetPkgJsonPath}`)
+      process.exit(1)
+    }
+    const targetPkg = JSON.parse(readFileSync(targetPkgJsonPath, "utf8"))
+    const packageName: string = targetPkg.name
+    if (!packageName) {
+      console.log(`No "name" field in ${targetPkgJsonPath}`)
+      process.exit(1)
+    }
+    packageDetails = {
+      name: packageName,
+      packageNames: [packageName],
+      path: join("node_modules", packageName),
+      pathSpecifier: packageName,
+      humanReadablePathSpecifier: packageName,
+      isNested: false,
+    }
+  } else {
+    const details = getPatchDetailsFromCliString(packagePathSpecifier)
+    if (!details) {
+      console.log("No such package", packagePathSpecifier)
+      return
+    }
+    packageDetails = details
   }
 
-  const state = getPatchApplicationState(packageDetails)
-  const isRebasing = state?.isRebasing ?? false
+  let isRebasing = false
+  let patchesToApplyBeforeDiffing: PatchedPackageDetails[] = []
+  let existingPatches: PatchedPackageDetails[] = []
+  let canCreateIssue = false
+  let numPatchesAfterCreate = 1
+  let state: ReturnType<typeof getPatchApplicationState> = null
+  let vcs: ReturnType<typeof getPackageVCSDetails> | undefined
 
-  // If we are rebasing and no patches have been applied, --append is the only valid option because
-  // there are no previous patches to overwrite/update
-  if (
-    isRebasing &&
-    state?.patches.filter((p) => p.didApply).length === 0 &&
-    mode.type === "overwrite_last"
-  ) {
-    mode = { type: "append", name: "initial" }
+  if (!isManualPatch) {
+    state = getPatchApplicationState(packageDetails)
+    isRebasing = state?.isRebasing ?? false
+
+    // If we are rebasing and no patches have been applied, --append is the only valid option because
+    // there are no previous patches to overwrite/update
+    if (
+      isRebasing &&
+      state?.patches.filter((p) => p.didApply).length === 0 &&
+      mode.type === "overwrite_last"
+    ) {
+      mode = { type: "append", name: "initial" }
+    }
+
+    if (isRebasing && state) {
+      verifyAppliedPatches({ appPath, patchDir, state })
+    }
+
+    if (
+      mode.type === "overwrite_last" &&
+      isRebasing &&
+      state?.patches.length === 0
+    ) {
+      mode = { type: "append", name: "initial" }
+    }
+
+    existingPatches =
+      getGroupedPatches(patchDir).pathSpecifierToPatchFiles[
+        packageDetails.pathSpecifier
+      ] || []
+
+    // apply all existing patches if appending
+    // otherwise apply all but the last
+    const previouslyAppliedPatches = state?.patches.filter((p) => p.didApply)
+    patchesToApplyBeforeDiffing = isRebasing
+      ? mode.type === "append"
+        ? existingPatches.slice(0, previouslyAppliedPatches!.length)
+        : state!.patches[state!.patches.length - 1].didApply
+        ? existingPatches.slice(0, previouslyAppliedPatches!.length - 1)
+        : existingPatches.slice(0, previouslyAppliedPatches!.length)
+      : mode.type === "append"
+      ? existingPatches
+      : existingPatches.slice(0, -1)
+
+    if (createIssue && mode.type === "append") {
+      console.log("--create-issue is not compatible with --append.")
+      process.exit(1)
+    }
+
+    if (createIssue && isRebasing) {
+      console.log("--create-issue is not compatible with rebasing.")
+      process.exit(1)
+    }
+
+    numPatchesAfterCreate =
+      mode.type === "append" || existingPatches.length === 0
+        ? existingPatches.length + 1
+        : existingPatches.length
+    vcs = getPackageVCSDetails(packageDetails)
+    canCreateIssue =
+      !isRebasing &&
+      shouldRecommendIssue(vcs) &&
+      numPatchesAfterCreate === 1 &&
+      mode.type !== "append"
   }
 
-  if (isRebasing && state) {
-    verifyAppliedPatches({ appPath, patchDir, state })
-  }
-
-  if (
-    mode.type === "overwrite_last" &&
-    isRebasing &&
-    state?.patches.length === 0
-  ) {
-    mode = { type: "append", name: "initial" }
-  }
-
-  const existingPatches =
-    getGroupedPatches(patchDir).pathSpecifierToPatchFiles[
-      packageDetails.pathSpecifier
-    ] || []
-
-  // apply all existing patches if appending
-  // otherwise apply all but the last
-  const previouslyAppliedPatches = state?.patches.filter((p) => p.didApply)
-  const patchesToApplyBeforeDiffing: PatchedPackageDetails[] = isRebasing
-    ? mode.type === "append"
-      ? existingPatches.slice(0, previouslyAppliedPatches!.length)
-      : state!.patches[state!.patches.length - 1].didApply
-      ? existingPatches.slice(0, previouslyAppliedPatches!.length - 1)
-      : existingPatches.slice(0, previouslyAppliedPatches!.length)
-    : mode.type === "append"
-    ? existingPatches
-    : existingPatches.slice(0, -1)
-
-  if (createIssue && mode.type === "append") {
-    console.log("--create-issue is not compatible with --append.")
-    process.exit(1)
-  }
-
-  if (createIssue && isRebasing) {
-    console.log("--create-issue is not compatible with rebasing.")
-    process.exit(1)
-  }
-
-  const numPatchesAfterCreate =
-    mode.type === "append" || existingPatches.length === 0
-      ? existingPatches.length + 1
-      : existingPatches.length
-  const vcs = getPackageVCSDetails(packageDetails)
-  const canCreateIssue =
-    !isRebasing &&
-    shouldRecommendIssue(vcs) &&
-    numPatchesAfterCreate === 1 &&
-    mode.type !== "append"
-
-  const packagePath = join(appPath, packageDetails.path)
+  const packagePath = isManualPatch
+    ? join(appPath, manualPatchOptions!.targetDir)
+    : join(appPath, packageDetails.path)
   const packageJsonPath = join(packagePath, "package.json")
 
   if (!existsSync(packageJsonPath)) {
@@ -159,16 +203,20 @@ export function makePatch({
   )
 
   try {
-    const patchesDir = resolve(join(appPath, patchDir))
+    const patchesDir = isManualPatch
+      ? resolve(join(appPath, patchDir, "manually-applied-patches"))
+      : resolve(join(appPath, patchDir))
 
     console.info(chalk.grey("•"), "Creating temporary folder")
 
     // Create the directory where the package will be extracted
     mkdirpSync(tmpRepoPackagePath)
 
-    const packageVersion = getPackageVersion(
-      join(resolve(packageDetails.path), "package.json"),
-    )
+    const packageVersion = isManualPatch
+      ? getPackageVersion(
+          join(resolve(manualPatchOptions!.targetDir), "package.json"),
+        )
+      : getPackageVersion(join(resolve(packageDetails.path), "package.json"))
 
     // Copy .npmrc in case packages are hosted in private registry
     const npmrcPath = join(appPath, ".npmrc")
@@ -181,12 +229,17 @@ export function makePatch({
       `Fetching ${packageDetails.name}@${packageVersion} with npm`,
     )
     // Use npm pack to download ONLY the package tarball — no transitive deps.
-    const packageResolution =
-      getPackageResolution({
-        packageDetails,
-        packageManager,
-        appPath,
-      }) ?? packageVersion
+    let packageResolution: string
+    if (isManualPatch) {
+      packageResolution = packageVersion
+    } else {
+      packageResolution =
+        getPackageResolution({
+          packageDetails,
+          packageManager,
+          appPath,
+        }) ?? packageVersion
+    }
     const packSpec = packageResolution.startsWith("file:")
       ? packageResolution.slice(5)
       : `${packageDetails.name}@${packageResolution}`
@@ -366,6 +419,27 @@ export function makePatch({
       return
     }
 
+    // In manualpatch mode, write the file and return early
+    if (isManualPatch) {
+      const manualPatchFileName = createManualPatchFileName({
+        packageName: packageDetails.name,
+        packageVersion,
+      })
+      const patchPath = join(patchesDir, manualPatchFileName)
+      if (!existsSync(dirname(patchPath))) {
+        mkdirpSync(dirname(patchPath))
+      }
+      writeFileSync(patchPath, diffResult.stdout)
+      console.log(
+        `${chalk.green("✔")} Created file ${join(
+          patchDir,
+          "manually-applied-patches",
+          manualPatchFileName,
+        )}\n`,
+      )
+      return
+    }
+
     // maybe delete existing
     if (mode.type === "append" && !isRebasing && existingPatches.length === 1) {
       // if we are appending to an existing patch that doesn't have a sequence number let's rename it
@@ -521,7 +595,7 @@ export function makePatch({
           patchPath,
         })
       } else {
-        maybePrintIssueCreationPrompt(vcs, packageDetails)
+        maybePrintIssueCreationPrompt(vcs!, packageDetails)
       }
     }
   } catch (e) {
@@ -555,6 +629,17 @@ function createPatchFileName({
   const name = !sequenceName ? "" : `+${sequenceName}`
 
   return `${nameAndVersion}${num}${name}.patch`
+}
+
+function createManualPatchFileName({
+  packageName,
+  packageVersion,
+}: {
+  packageName: string
+  packageVersion: string
+}) {
+  const sanitizedName = packageName.replace(/\//g, "+")
+  return `${sanitizedName}+${packageVersion}.manualpatch`
 }
 
 export function logPatchSequenceError({

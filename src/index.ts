@@ -26,7 +26,7 @@ const argv = minimist(process.argv.slice(2), {
     "partial",
     "",
   ],
-  string: ["patch-dir", "append", "rebase"],
+  string: ["patch-dir", "append", "rebase", "create-manualpatch"],
 })
 const packageNames = argv._
 
@@ -45,7 +45,42 @@ if (argv.version || argv.v) {
   if (patchDir.startsWith("/")) {
     throw new Error("--patch-dir must be a relative path")
   }
-  if ("rebase" in argv) {
+  if ("create-manualpatch" in argv) {
+    const targetDir = argv["create-manualpatch"]
+    if (!targetDir) {
+      console.log(
+        chalk.red(
+          "You must specify a target directory when using --create-manualpatch.\n" +
+            "Example: yarn-berry-patch-package --create-manualpatch node_modules/parentA/node_modules/@scope/pkg",
+        ),
+      )
+      process.exit(1)
+    }
+    const includePaths = makeRegExp(
+      argv.include,
+      "include",
+      /.*/,
+      argv["case-sensitive-path-filtering"],
+    )
+    const excludePaths = makeRegExp(
+      argv.exclude,
+      "exclude",
+      /^package\.json$/,
+      argv["case-sensitive-path-filtering"],
+    )
+    const packageManager = detectPackageManager(appPath)
+    makePatch({
+      packagePathSpecifier: "",
+      appPath,
+      packageManager,
+      includePaths,
+      excludePaths,
+      patchDir,
+      createIssue: false,
+      mode: { type: "overwrite_last" },
+      manualPatchOptions: { targetDir },
+    })
+  } else if ("rebase" in argv) {
     if (!argv.rebase) {
       console.log(
         chalk.red(
@@ -212,5 +247,16 @@ Usage:
     ${chalk.bold("--patch-dir")}
 
         Specify the name for the directory in which to put the patch files.
+
+    ${chalk.bold("--create-manualpatch <target-dir>")}
+
+        Create a .manualpatch file for a nested package. The target directory
+        should be the path to the nested package in node_modules.
+
+        Example:
+          yarn-berry-patch-package --create-manualpatch node_modules/parentA/node_modules/@scope/pkg
+
+        The generated .manualpatch file will be placed in
+        patches/manually-applied-patches/ and is compatible with git apply --directory.
 `)
 }

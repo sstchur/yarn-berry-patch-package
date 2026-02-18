@@ -1,6 +1,6 @@
 {
   "name": "yarn-berry-patch-package",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "Fix broken node modules in Yarn v4+ projects with no fuss",
   "main": "dist/index.js",
   "repository": "github:sstchur/yarn-berry-patch-package",
